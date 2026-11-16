@@ -23,7 +23,7 @@ Dependência (`pom.xml`):
 
 - Acessar a [documentação](http://localhost:8080/docs-bikes.html).
 
-#### Acrescentando informações em Usuário
+#### Acrescentando informações em Usuários
 
 - Em [UsuarioController](src/main/java/br/edu/ifc//bikes/web/controller/UsuarioController.java):
    - No cabeçalho
