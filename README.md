@@ -23,7 +23,7 @@ Dependência (`pom.xml`):
 
 - Acessar a [documentação](http://localhost:8080/docs-bikes.html).
 
-#### Acrescentando informações em Usuários
+#### Acrescentando informações em Usuário
 
 - Em [UsuarioController](src/main/java/br/edu/ifc//bikes/web/controller/UsuarioController.java):
    - No cabeçalho
@@ -119,24 +119,3 @@ o cliente deve ter um `usuário` cadastrado e autenticado.
 - O recurso `Cliente` deve ser documentado com SpringDoc OpenAPI 3.1 e Swagger 3.
 - Fazer validação dos campos de entrada.
 - Campos de auditoria (os mesmos de `Usuário`)
-
-## Recurso Bicicleta
-
-Todas as operações de bicicletas exigem autenticação e o papel `ADMIN`. Cada bicicleta possui um `id` interno e um `codigo` único e independente dele, além do status `LIVRE`, `OCUPADA` ou `EM_MANUTENCAO`.
-
-Endpoints em `/api/v1/bicicletas`:
-
-- `POST /api/v1/bicicletas`: cadastra bicicleta (`codigo`, `status`).
-- `GET /api/v1/bicicletas`: lista bicicletas.
-- `GET /api/v1/bicicletas/{codigo}`: localiza bicicleta pelo código.
-- `PUT /api/v1/bicicletas/{codigo}`: atualiza o código e o status.
-- `DELETE /api/v1/bicicletas/{codigo}`: remove bicicleta pelo código.
-
-Exemplo de corpo para cadastro e atualização:
-
-```json
-{
-  "codigo": "BIKE-001",
-  "status": "LIVRE"
-}
-```
