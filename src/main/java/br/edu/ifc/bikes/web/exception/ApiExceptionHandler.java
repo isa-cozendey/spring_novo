@@ -1,6 +1,9 @@
 package br.edu.ifc.bikes.web.exception;
 
 import br.edu.ifc.bikes.exception.EntityNotFoundException;
+import br.edu.ifc.bikes.exception.DevolucaoInvalidException;
+import br.edu.ifc.bikes.exception.LocacaoInvalidException;
+import br.edu.ifc.bikes.exception.LocacaoUnavailableException;
 import br.edu.ifc.bikes.exception.BicicletaUniqueViolationException;
 import br.edu.ifc.bikes.exception.ClienteUniqueViolationException;
 import br.edu.ifc.bikes.exception.UsernameUniqueViolationException;
@@ -57,6 +60,33 @@ public class ApiExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    @ExceptionHandler(LocacaoUnavailableException.class)
+    public ResponseEntity<ErrorMessage> locacaoUnavailableException(
+            LocacaoUnavailableException ex,
+            HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    @ExceptionHandler(LocacaoInvalidException.class)
+    public ResponseEntity<ErrorMessage> locacaoInvalidException(
+            LocacaoInvalidException ex,
+            HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
+    }
+
+    @ExceptionHandler(DevolucaoInvalidException.class)
+    public ResponseEntity<ErrorMessage> devolucaoInvalidException(
+            DevolucaoInvalidException ex,
+            HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorMessage(request, HttpStatus.CONFLICT, ex.getMessage()));
     }

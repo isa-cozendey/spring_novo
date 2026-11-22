@@ -119,3 +119,47 @@ o cliente deve ter um `usuário` cadastrado e autenticado.
 - O recurso `Cliente` deve ser documentado com SpringDoc OpenAPI 3.1 e Swagger 3.
 - Fazer validação dos campos de entrada.
 - Campos de auditoria (os mesmos de `Usuário`)
+
+## Recurso Locação
+
+Um cliente autenticado pode solicitar uma bicicleta livre em `POST /api/v1/locacoes/solicitacoes`, informar a data/hora prevista de devolução e efetivar a solicitação em `POST /api/v1/locacoes/{id}/efetivar` com os dados do cartão de crédito.
+
+- `POST /api/v1/locacoes/solicitacoes`: verifica bicicletas disponíveis e cria/reserva uma locação.
+- `POST /api/v1/locacoes/{id}/efetivar`: registra a retirada e os dados mascarados do cartão.
+- `POST /api/v1/locacoes/{id}/devolver`: registra a devolução efetiva e libera a bicicleta.
+- `GET /api/v1/locacoes/me`: lista as locações do cliente autenticado.
+- `GET /api/v1/locacoes/{id}`: consulta uma locação própria ou qualquer locação como administrador.
+- `GET /api/v1/locacoes`: lista todas as locações para administradores.
+
+## Recurso Devolução
+
+Uma devolução registra a data/hora efetiva, calcula o tempo de utilização e apresenta o valor devido.
+A tarifa padrão é `R$ 5,00 por hora`, configurável por `bikes.locacao.tarifa-hora`.
+
+- `POST /api/v1/devolucoes/locacao/{locacaoId}`: registra a devolução.
+- Corpo opcional: `{"problemaIdentificado":true,"observacao":"descrição do problema"}`.
+- `PATCH /api/v1/devolucoes/{devolucaoId}/bicicleta-status?status=EM_MANUTENCAO`: altera o estado da bicicleta.
+- `GET /api/v1/devolucoes/me`: lista devoluções do cliente autenticado.
+- `GET /api/v1/devolucoes/{devolucaoId}`: consulta uma devolução.
+- `GET /api/v1/devolucoes`: lista todas as devoluções, somente para administrador.
+
+## Recurso Relatórios
+
+O relatório administrativo de locações e devoluções é gerado com JasperReports e está disponível somente para administradores.
+
+- `GET /api/v1/relatorios/locacoes`: retorna os dados do relatório em JSON.
+- `GET /api/v1/relatorios/locacoes/pdf`: gera e baixa o relatório em PDF.
+
+O relatório contém nome do cliente, código da bicicleta, data de retirada, data efetiva de devolução, duração da locação e status.
+
+## Frontend separado para testes
+
+Uma interface simples em HTML/JavaScript/Vite está disponível na pasta `frontend/`.
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Abra `http://localhost:5173`. O frontend encaminha `/api` para `http://localhost:8080`, portanto o backend Spring deve estar iniciado na porta 8080.

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+              http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="relatorio-locacoes" pageWidth="842" pageHeight="595"
+              orientation="Landscape" columnWidth="802" leftMargin="20"
+              rightMargin="20" topMargin="20" bottomMargin="20">
+    <field name="nomeCliente" class="java.lang.String"/>
+    <field name="codigoBicicleta" class="java.lang.String"/>
+    <field name="dataRetirada" class="java.lang.String"/>
+    <field name="dataDevolucao" class="java.lang.String"/>
+    <field name="duracao" class="java.lang.String"/>
+    <field name="status" class="java.lang.String"/>
+    <title>
+        <band height="45">
+            <staticText>
+                <reportElement x="0" y="0" width="802" height="30"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Relatório de Locações e Devoluções]]></text>
+            </staticText>
+        </band>
+    </title>
+    <columnHeader>
+        <band height="22">
+            <staticText><reportElement x="0" y="0" width="150" height="20"/><text><![CDATA[Cliente]]></text></staticText>
+            <staticText><reportElement x="150" y="0" width="100" height="20"/><text><![CDATA[Bicicleta]]></text></staticText>
+            <staticText><reportElement x="250" y="0" width="130" height="20"/><text><![CDATA[Retirada]]></text></staticText>
+            <staticText><reportElement x="380" y="0" width="130" height="20"/><text><![CDATA[Devolução]]></text></staticText>
+            <staticText><reportElement x="510" y="0" width="120" height="20"/><text><![CDATA[Duração]]></text></staticText>
+            <staticText><reportElement x="630" y="0" width="172" height="20"/><text><![CDATA[Status]]></text></staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="22">
+            <textField><reportElement x="0" y="0" width="150" height="20"/><textFieldExpression><![CDATA[$F{nomeCliente}]]></textFieldExpression></textField>
+            <textField><reportElement x="150" y="0" width="100" height="20"/><textFieldExpression><![CDATA[$F{codigoBicicleta}]]></textFieldExpression></textField>
+            <textField><reportElement x="250" y="0" width="130" height="20"/><textFieldExpression><![CDATA[$F{dataRetirada}]]></textFieldExpression></textField>
+            <textField><reportElement x="380" y="0" width="130" height="20"/><textFieldExpression><![CDATA[$F{dataDevolucao}]]></textFieldExpression></textField>
+            <textField><reportElement x="510" y="0" width="120" height="20"/><textFieldExpression><![CDATA[$F{duracao}]]></textFieldExpression></textField>
+            <textField><reportElement x="630" y="0" width="172" height="20"/><textFieldExpression><![CDATA[$F{status}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+</jasperReport>
