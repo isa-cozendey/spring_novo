@@ -1,237 +1,211 @@
-# Bikes — API de aluguel de bicicletas
+# Bikes
 
-Projeto acadêmico de uma API REST para administrar usuários, clientes, bicicletas, locações, devoluções e relatórios. O backend é feito com Java 21 e Spring Boot. Há também um frontend simples, separado do backend, para testar as operações pela interface.
+Projeto acadêmico de backend desenvolvido em Java 21 e Spring Boot para gerenciamento de uma locadora de bicicletas.
 
-Este README foi escrito como guia de estudo e apresentação: explica a organização do código e acompanha o caminho de uma requisição desde a URL até o banco de dados.
+A aplicação disponibiliza uma API REST para administrar usuários, clientes, bicicletas, locações, devoluções e relatórios. O frontend incluído no repositório é simples e existe apenas para testes manuais e demonstração das principais operações. O foco principal do projeto é o backend.
 
-## 1. Visão geral para apresentar
+## Funcionalidades
 
-> “O projeto é uma API REST de aluguel de bicicletas. O Spring MVC recebe as requisições nos controllers; os services aplicam as regras do negócio; os repositories acessam o banco usando Spring Data JPA; e as entities representam as tabelas. A autenticação usa JWT e as permissões são verificadas por papel. Os dados trafegam em JSON, exceto o relatório, que também pode ser gerado em PDF com JasperReports.”
+- Cadastro e autenticação de usuários com Spring Security e JWT.
+- Controle de acesso por perfis `ROLE_ADMIN` e `ROLE_CLIENTE`.
+- Cadastro e consulta de clientes.
+- Cadastro, alteração e consulta de bicicletas.
+- Solicitação e efetivação de locações.
+- Registro de devoluções e cálculo de valores.
+- Geração de relatório de locações em JSON e PDF.
+- Documentação interativa dos endpoints com Swagger/OpenAPI.
+- Testes de integração com banco H2.
 
-### Tecnologias principais
+## Tecnologias
 
-- **Java 21**: linguagem e versão configurada para compilação.
-- **Spring Boot**: inicializa a aplicação e integra os componentes.
-- **Spring Web MVC**: cria os endpoints REST.
-- **Spring Data JPA / Hibernate**: mapeia objetos Java para tabelas e executa consultas.
-- **MySQL**: banco configurado para a execução normal.
-- **H2**: banco em memória usado pelos testes de integração.
-- **Spring Security + JWT**: autenticação e autorização.
-- **Bean Validation**: valida dados recebidos nos DTOs.
-- **MapStruct**: gera implementações para converter entities em DTOs.
-- **SpringDoc / Swagger UI**: documentação navegável da API.
-- **JasperReports**: geração do relatório PDF.
-- **Vite + JavaScript**: frontend separado para testes manuais.
+- Java 21
+- Spring Boot
+- Spring Web MVC
+- Spring Security
+- JWT
+- Spring Data JPA e Hibernate
+- MySQL
+- H2
+- Bean Validation
+- MapStruct
+- SpringDoc OpenAPI
+- JasperReports
+- Maven Wrapper
+- Vite e JavaScript no frontend de demonstração
 
-## 2. Como a estrutura está organizada
-
-Código principal: `src/main/java/br/edu/ifc/bikes/`.
+## Estrutura do projeto
 
 ```text
-br.edu.ifc.bikes/
-├── BikesApplication.java
-├── config/
-├── dto/
-│   └── mapper/
-├── entity/
-├── exception/
-├── jwt/
-├── repository/
-├── service/
+src/main/java/br/edu/ifc/bikes/
+├── config/             Configurações de segurança, auditoria e documentação
+├── dto/                Objetos de entrada e saída da API
+├── dto/mapper/         Conversão entre entidades e DTOs
+├── entity/             Entidades persistidas pelo JPA
+├── exception/          Exceções de domínio
+├── jwt/                Autenticação e geração de tokens JWT
+├── repository/         Acesso ao banco com Spring Data JPA
+├── service/            Regras de negócio
 └── web/
-    ├── controller/
-    └── exception/
+    ├── controller/     Endpoints REST
+    └── exception/      Tratamento global de erros HTTP
+
+src/main/resources/
+├── application.properties
+└── reports/            Template JRXML do relatório
+
+src/test/               Testes de integração e dados SQL de teste
+frontend/               Interface simples para demonstração e testes
 ```
 
-### `BikesApplication.java`
+## Arquitetura
 
-É o ponto de entrada do Spring Boot. O método `main` chama `SpringApplication.run(...)`, que inicializa o servidor web, encontra os componentes e prepara a aplicação.
+A aplicação segue uma organização em camadas:
 
-### `config/` — configuração
+```text
+Cliente HTTP
+  -> Controller
+  -> Service
+  -> Repository
+  -> Banco de dados
+```
 
-Classes que configuram o comportamento geral:
+- **Controllers** recebem as requisições HTTP, validam os dados dos DTOs e chamam os serviços.
+- **Services** concentram as regras de negócio e o controle das transações.
+- **Repositories** realizam a persistência usando Spring Data JPA.
+- **Entities** representam as tabelas e seus relacionamentos.
+- **DTOs e mappers** definem os dados expostos pela API e evitam o uso direto das entidades nas respostas.
+- **Exception handler** converte exceções conhecidas em respostas HTTP padronizadas.
 
-- `SpringSecurityConfig`: define a cadeia de segurança, desativa login por formulário e HTTP Basic, ativa sessão sem estado e libera os endpoints de cadastro de usuário e login.
-- `SpringJpaAuditingConfig`: ativa auditoria automática e informa quem é o usuário autenticado que está fazendo uma alteração.
-- `SpringTimezoneConfig`: define o fuso horário usado pela aplicação.
-- `SpringDocOpenApiConfig`: configura Swagger/OpenAPI e o esquema Bearer JWT.
+## Modelo funcional
 
-### `web/controller/` — entrada HTTP
+### Usuários
 
-Controllers recebem HTTP, interpretam caminho, método, parâmetros e corpo JSON, chamam um service e definem a resposta/status HTTP. Eles não devem concentrar as regras de negócio.
+Os usuários possuem autenticação por nome de usuário e senha. Os perfis disponíveis são:
 
-Exemplos: `UsuarioController`, `BicicletaController`, `LocacaoController`.
+- `ROLE_CLIENTE`: pode operar sobre seu próprio cadastro e suas locações.
+- `ROLE_ADMIN`: pode administrar clientes, bicicletas, locações e relatórios.
 
-### `service/` — regras de negócio
+O cadastro público cria uma conta de cliente. Operações administrativas devem ser realizadas por uma conta já autorizada como administradora.
 
-Services implementam as ações do sistema. Por exemplo, `LocacaoService` verifica se há bicicleta livre, associa a locação ao cliente e controla a transição de status. `@Transactional` mantém operações relacionadas na mesma transação do banco.
+### Clientes
 
-### `repository/` — acesso a dados
+Cada cliente representa os dados pessoais associados a um usuário da aplicação.
 
-Interfaces baseadas em `JpaRepository`. O Spring gera a implementação em tempo de execução. Métodos como `findByCodigo` e `findByClienteId` são interpretados pelo Spring Data JPA e viram consultas ao banco.
+### Bicicletas
 
-### `entity/` — modelo persistido
+Uma bicicleta possui código único e um status:
 
-Classes anotadas com `@Entity` representam tabelas e relacionamentos:
+- `LIVRE`
+- `OCUPADA`
+- `EM_MANUTENCAO`
 
-- `Usuario`: credenciais e papel (`ROLE_ADMIN` ou `ROLE_CLIENTE`).
-- `Cliente`: cadastro de cliente associado a um usuário.
-- `Bicicleta`: código único e status (`LIVRE`, `OCUPADA`, `EM_MANUTENCAO`).
-- `Locacao`: cliente, bicicleta, datas, status e dados não sensíveis do cartão.
-- `Devolucao`: devolução efetiva, duração, valor e eventual problema.
+Administradores podem cadastrar, consultar, alterar e remover bicicletas. O status determina se ela pode ser usada em uma nova locação.
 
-Campos como `dataCriacao`, `dataModificacao`, `criadoPor` e `modificadoPor` são preenchidos pela auditoria JPA nas entities que a utilizam.
+### Locações
 
-### `dto/` e `dto/mapper/` — dados de entrada e saída
+Uma locação registra o cliente, a bicicleta, a data prevista de devolução e o estado da operação. O processo principal é:
 
-DTO significa *Data Transfer Object*. São objetos usados na fronteira da API para receber ou devolver dados sem expor diretamente a entity do banco.
+1. Solicitação da locação por um cliente.
+2. Seleção de uma bicicleta disponível.
+3. Efetivação da locação.
+4. Registro da devolução.
+5. Liberação da bicicleta ou alteração para manutenção.
 
-- DTOs `Request` representam dados enviados pelo cliente.
-- DTOs `Response` representam dados retornados pela API.
-- Anotações como `@NotBlank`, `@NotNull`, `@Size`, `@Pattern` e `@Future` validam os dados recebidos.
-- Mappers MapStruct convertem entities em DTOs de resposta.
+Dados completos de cartão não são persistidos. São armazenados somente o titular, a validade e os quatro últimos dígitos.
 
-### `jwt/` — autenticação com token
+### Devoluções
 
-- `AutenticacaoController` recebe usuário e senha e pede ao Spring Security para autenticar.
-- `JwtUtils` cria e valida o token.
-- `JwtAuthorizationFilter` lê o cabeçalho `Authorization` em cada requisição protegida.
-- `JwtUserDetailsService` carrega o usuário e os papéis no banco.
-- `JwtUserDetails` adapta o usuário ao modelo esperado pelo Spring Security.
+Na devolução, o sistema registra data e hora, duração e valor correspondente. A tarifa padrão é R$ 5,00 por hora e pode ser configurada pela propriedade `bikes.locacao.tarifa-hora`.
 
-O token é enviado nas requisições protegidas no formato:
+## API
+
+A base da API é:
+
+```text
+http://localhost:8080/api/v1
+```
+
+### Endpoints principais
+
+| Recurso | Método | Caminho | Acesso |
+|---|---|---|---|
+| Usuário | `POST` | `/usuarios` | Público |
+| Autenticação | `POST` | `/auth` | Público |
+| Usuários | `GET` | `/usuarios` | Admin |
+| Usuário | `GET` | `/usuarios/{id}` | Admin ou proprietário |
+| Clientes | `POST`, `GET` | `/clientes` | Autenticado/admin |
+| Cliente atual | `GET` | `/clientes/me` | Cliente autenticado |
+| Bicicletas | `POST`, `GET`, `PUT`, `DELETE` | `/bicicletas` | Admin |
+| Bicicleta por código | `GET` | `/bicicletas/{codigo}` | Admin |
+| Solicitações de locação | `POST` | `/locacoes/solicitacoes` | Cliente/admin |
+| Efetivação da locação | `POST` | `/locacoes/{id}/efetivar` | Cliente proprietário |
+| Devolução | `POST` | `/locacoes/{id}/devolver` | Cliente/admin |
+| Locações do usuário | `GET` | `/locacoes/me` | Cliente autenticado |
+| Devoluções | `GET`, `POST` | `/devolucoes` | Admin/cliente relacionado |
+| Relatório JSON | `GET` | `/relatorios/locacoes` | Admin |
+| Relatório PDF | `GET` | `/relatorios/locacoes/pdf` | Admin |
+
+Os caminhos completos e os modelos de entrada e saída estão disponíveis no Swagger após iniciar a aplicação.
+
+## Autenticação
+
+A autenticação devolve um token JWT. Esse token deve ser enviado no cabeçalho das requisições protegidas:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-### `exception/` e `web/exception/` — erros da API
+Exemplo de criação de usuário:
 
-As exceções de domínio ficam em `exception/`, por exemplo, bicicleta indisponível ou locação inválida. `ApiExceptionHandler`, em `web/exception/`, converte exceções conhecidas em respostas HTTP com um formato de erro (`ErrorMessage`), como `404`, `409` ou `422`.
-
-### `src/main/resources/`
-
-Contém configuração e recursos carregados pela aplicação:
-
-- `application.properties`: nome, locale, datasource, JPA e Swagger.
-- `reports/relatorio-locacoes.jrxml`: template JasperReports que define o layout do PDF.
-
-### `src/test/`
-
-Contém testes de integração. As classes `*IT` iniciam a aplicação em uma porta aleatória, fazem requisições HTTP de teste e verificam status e resposta. Os arquivos `src/test/resources/sql/` preparam e limpam dados de teste. A configuração de testes usa H2.
-
-### `frontend/`
-
-Aplicação de teste independente do backend, feita com JavaScript e Vite. Ela chama a API por `/api`; o proxy de desenvolvimento configurado em `vite.config.js` encaminha essas chamadas para `http://localhost:8080`.
-
-### `pom.xml` e Maven Wrapper
-
-`pom.xml` declara Java 21, dependências e plugins do Maven. `mvnw` e `mvnw.cmd` permitem executar o Maven sem precisar instalá-lo globalmente.
-
-## 3. Caminho de uma requisição
-
-Exemplo: cadastrar uma bicicleta.
-
-1. O cliente envia `POST /api/v1/bicicletas` com JSON e token JWT.
-2. O filtro JWT valida o token e identifica usuário e papel.
-3. Spring Security verifica se o papel tem autorização; bicicletas são restritas a `ADMIN`.
-4. `BicicletaController` recebe o JSON como `BicicletaRequestDTO`.
-5. `@Valid` verifica as regras de validação do DTO.
-6. O controller chama `BicicletaService`.
-7. O service aplica regras, por exemplo, impedir código duplicado.
-8. `BicicletaRepository` salva a entity via JPA/Hibernate.
-9. O mapper converte a entity salva em `BicicletaResponseDTO`.
-10. O controller retorna JSON e o status HTTP apropriado, como `201 Created`.
-
-Em resumo:
-
-```text
-Requisição HTTP
-  -> filtro de segurança
-  -> Controller
-  -> validação do DTO
-  -> Service (regra de negócio)
-  -> Repository / JPA
-  -> banco de dados
-  -> Mapper / DTO
-  -> resposta HTTP
+```bash
+curl -X POST http://localhost:8080/api/v1/usuarios \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"cliente@exemplo.com","password":"123456"}'
 ```
 
-## 4. Fluxo funcional dos recursos
+Exemplo de autenticação:
 
-### Usuários e autenticação
+```bash
+curl -X POST http://localhost:8080/api/v1/auth \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"cliente@exemplo.com","password":"123456"}'
+```
 
-`POST /api/v1/usuarios` cria uma conta com senha de 6 caracteres. O cadastro público cria usuários com papel `ROLE_CLIENTE`; o papel não é aceito no corpo da requisição para evitar que qualquer pessoa se conceda privilégios administrativos.
-
-`POST /api/v1/auth` valida credenciais e devolve um JWT. Esse token é usado para acessar os demais recursos. Para criar um administrador em ambiente de desenvolvimento, uma conta precisa ser promovida por um procedimento administrativo confiável no banco; não se deve expor essa operação no cadastro público.
-
-### Clientes
-
-Cliente é criado por usuário autenticado e fica associado a esse usuário. O cliente consulta seu próprio cadastro; administrador pode listar todos.
-
-### Bicicletas
-
-Administrador cadastra, lista, localiza pelo código, atualiza e remove bicicletas. O código é único e diferente do ID interno. Status possíveis: `LIVRE`, `OCUPADA` e `EM_MANUTENCAO`.
-
-### Locações
-
-O cliente autenticado solicita uma locação e informa a data prevista de devolução. O sistema escolhe uma bicicleta livre e a reserva. Para iniciar a locação, o cliente efetiva a solicitação com dados do cartão, e a retirada é registrada.
-
-O backend não persiste o número completo do cartão nem o código de segurança; guarda somente o titular, validade e os quatro últimos dígitos. Uma bicicleta não deve ser alugada simultaneamente em duas locações.
-
-### Devoluções
-
-Ao registrar a devolução, o sistema registra a data/hora efetiva, calcula a duração e o valor devido. A tarifa padrão configurada no service é R$ 5,00 por hora e pode ser alterada pela propriedade `bikes.locacao.tarifa-hora`. Sem problema, a bicicleta volta a `LIVRE`; se houver problema, pode ir para `EM_MANUTENCAO`.
-
-### Relatórios
-
-Os endpoints de relatório são administrativos. O JSON permite inspecionar os dados e o endpoint PDF usa JasperReports e o template `.jrxml` em `src/main/resources/reports/`.
-
-## 5. Endpoints principais
-
-Base da API: `http://localhost:8080/api/v1`.
-
-| Recurso | Método e caminho | Acesso |
-|---|---|---|
-| Criar usuário | `POST /usuarios` | Público |
-| Login | `POST /auth` | Público |
-| Consultar usuário | `GET /usuarios/{id}` | Admin ou o próprio usuário |
-| Listar usuários | `GET /usuarios` | Admin |
-| Cadastrar cliente | `POST /clientes` | Autenticado |
-| Consultar próprio cliente | `GET /clientes/me` | Cliente ou admin |
-| Listar clientes | `GET /clientes` | Admin |
-| CRUD bicicletas | `/bicicletas` e `/bicicletas/{codigo}` | Admin |
-| Solicitar locação | `POST /locacoes/solicitacoes` | Cliente ou admin |
-| Efetivar locação | `POST /locacoes/{id}/efetivar` | Cliente dono |
-| Registrar devolução da locação | `POST /locacoes/{id}/devolver` | Cliente dono ou admin |
-| Listar próprias locações | `GET /locacoes/me` | Usuário associado a um cliente |
-| Registrar devolução detalhada | `POST /devolucoes/locacao/{locacaoId}` | Cliente dono ou admin |
-| Listar devoluções | `GET /devolucoes` | Admin |
-| Relatório JSON / PDF | `GET /relatorios/locacoes[/pdf]` | Admin |
-
-Os endpoints de efetivação e devolução em `/locacoes` são diferentes do recurso detalhado `/devolucoes`: este último registra a cobrança e os dados da devolução. Apesar de algumas rotas permitirem o papel `ADMIN` na anotação do controller, `efetivar` ainda exige que a conta autenticada esteja associada ao cliente dono da locação. A rota `GET /locacoes/me` também procura um cadastro de cliente associado à conta autenticada.
-
-## 6. Como executar
+## Execução
 
 ### Pré-requisitos
 
-- JDK 21.
-- MySQL em execução e banco `bikes` criado.
-- Node.js e npm para rodar o frontend.
+- JDK 21
+- MySQL
+- Node.js e npm para executar o frontend demonstrativo
 
-O datasource de desenvolvimento está em `src/main/resources/application.properties`. Ajuste usuário e senha do MySQL para seu ambiente e não publique credenciais reais. Hibernate está configurado com `ddl-auto=update`, que atualiza o esquema com base nas entities; isso é prático para o projeto acadêmico, mas em produção normalmente se usa uma ferramenta de migrations.
+O datasource padrão está configurado em `src/main/resources/application.properties`. Antes da execução, ajuste a URL, o usuário e a senha do MySQL. O projeto cria ou atualiza o esquema com `spring.jpa.hibernate.ddl-auto=update`; para uma aplicação em produção, esse comportamento deveria ser substituído por migrations versionadas.
 
 ### Backend
 
 Na raiz do repositório:
 
 ```bash
+./mvnw spring-boot:run
+```
+
+No Linux, caso o arquivo não esteja executável:
+
+```bash
 bash ./mvnw spring-boot:run
 ```
 
-A API sobe por padrão em `http://localhost:8080`.
+A API estará disponível em `http://localhost:8080`.
 
-### Frontend
+### Documentação da API
+
+Com o backend em execução:
+
+```text
+http://localhost:8080/docs-bikes.html
+```
+
+### Frontend de demonstração
 
 Em outro terminal:
 
@@ -241,45 +215,34 @@ npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173`. O backend precisa estar rodando para as ações da interface funcionarem.
+A interface estará disponível em `http://localhost:5173`. O backend precisa estar em execução para que as chamadas sejam concluídas.
 
-### Swagger UI
+## Testes
 
-Com o backend no ar, abra `http://localhost:8080/docs-bikes.html`. É possível consultar endpoints e enviar requisições; para operações protegidas, informe o token Bearer.
-
-## 7. Testes
-
-Para executar os testes:
+Execute todos os testes com:
 
 ```bash
-bash ./mvnw test
+./mvnw test
 ```
 
-Os testes de integração usam H2 e cobrem autenticação, autorização, cadastro, regras de locação/devolução e geração do relatório. O H2 evita depender do MySQL para executar os testes. No estado atual, alguns testes antigos de `UsuarioIT` podem falhar porque o script de dados de teste grava `ADMIN`, enquanto o enum de papel do usuário espera `ROLE_ADMIN`.
+Os testes de integração iniciam a aplicação e verificam endpoints relacionados a usuários, clientes, bicicletas, locações, devoluções e relatórios. O ambiente de testes utiliza H2 e scripts SQL localizados em `src/test/resources/sql`.
 
-## 8. Exemplos de chamadas
+## Banco de dados
 
-Criar usuário:
+A aplicação usa MySQL no ambiente de execução padrão e H2 nos testes.
 
-```bash
-curl -X POST http://localhost:8080/api/v1/usuarios \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"cliente@exemplo.com","password":"123456"}'
-```
+O Hibernate está configurado para atualizar o esquema a partir das entidades. As principais entidades são:
 
-Autenticar e obter o token:
+- `Usuario`
+- `Cliente`
+- `Bicicleta`
+- `Locacao`
+- `Devolucao`
 
-```bash
-curl -X POST http://localhost:8080/api/v1/auth \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"cliente@exemplo.com","password":"123456"}'
-```
+O sistema também utiliza auditoria JPA para registrar dados de criação e alteração em entidades elegíveis.
 
-Depois, enviar o token nas chamadas protegidas:
+## Contexto acadêmico
 
-```bash
-curl http://localhost:8080/api/v1/clientes/me \
-  -H 'Authorization: Bearer <token>'
-```
+Este repositório foi desenvolvido como um projeto acadêmico para estudo e demonstração de conceitos de desenvolvimento backend com Spring. A implementação também inclui recursos de segurança, persistência, testes e geração de documentos.
 
-
+O frontend não possui o nível de refinamento ou de complexidade esperado em uma aplicação comercial. Ele foi mantido como uma interface pequena para facilitar testes visuais e demonstrações das operações oferecidas pela API.
